@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>He Parth! | The Grand Strategic Index</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;400;600;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* PREVENT TEXT SELECTION/COPYING */
+        body, html, div, p, h1, h2, h3, span, button, textarea, select, label {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            cursor: default;
+        }
+        
+        /* Allow text selection only in textarea for note-taking */
+        textarea.note-textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+            cursor: text;
+        }
+        
+        :root { --gold: #b89b5e; --jarvis: #00d4ff; --panel: rgba(255, 255, 255, 0.92); }
+        body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; height: 100%; overflow-x: hidden; }
+        
+        /* LOGIC 1: JARVIS BACKGROUND FULLY VISIBLE - NO DARK OVERLAYS */
+        .bg-layer { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh; z-index: -1; 
+            background: url('https://image2url.com/r2/bucket2/images/1767890740331-559ba93c-80fc-4b2f-b3f4-fe603e1f703a.png'); 
+            background-size: cover; background-position: center;
+        }
+
+        .page { display: none; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        .active { display: block; animation: fadeIn 0.6s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .top-nav { display: flex; justify-content: space-between; padding: 20px; position: relative; z-index: 100; }
+        .he-parth { font-family: 'Cinzel', serif; font-size: 4rem; color: #8a6d3b; /* DARKER GOLD */ text-align: center; margin: 10px 0; text-shadow: 2px 2px 15px rgba(0,0,0,0.3); }
+        
+        .flex-container { display: flex; justify-content: center; max-width: 1300px; margin: 20px auto; gap: 20px; align-items: flex-start; }
+
+        .tab-card { 
+            background: var(--panel); backdrop-filter: blur(10px); padding: 20px; border-radius: 15px; 
+            width: 290px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: 0.3s; 
+            border-left: 6px solid var(--gold); position: relative; cursor: pointer;
+        }
+        .tab-card.elongated { width: 550px; }
+        .glow-tab { background: linear-gradient(135deg, var(--gold), #f3e5ab); color: white; text-align: center; animation: pulse 2s infinite alternate; }
+        
+        .age-text { font-family: 'Orbitron'; font-size: 0.85rem; color: #b89b5e; font-weight: bold; margin-top: 10px; line-height: 1.6; }
+        .note-textarea { width: 100%; height: 200px; border: none; background: transparent; font-family: inherit; font-size: 1.1rem; resize: none; outline: none; border-top: 1px solid #eee; padding-top: 10px; }
+
+        /* JARVIS ENGINE COMPONENTS */
+        #page3 { background: transparent; } /* Transparent to show logic 1 background */
+        .engine-room { position: relative; width: 350px; height: 350px; margin: 20px auto; border-radius: 50%; border: 5px solid var(--jarvis); display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); backdrop-filter: blur(2px); }
+        .gear { position: absolute; border: 3px solid var(--jarvis); border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: rotate linear infinite; }
+        .gear::after, .gear::before { content: ''; position: absolute; background: var(--jarvis); }
+        .g1 { width: 140px; height: 140px; animation-duration: 8s; }
+        .g2 { width: 90px; height: 90px; top: 20px; left: 20px; animation-duration: 5s; animation-direction: reverse; opacity: 0.6; }
+        .piston { position: absolute; width: 12px; height: 60px; background: var(--gold); border-radius: 6px; animation: movePiston 0.5s infinite alternate; }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
+        @keyframes movePiston { from { transform: translateY(0); } to { transform: translateY(25px); } }
+        .score-box { font-family: 'Orbitron'; font-size: 5rem; color: var(--jarvis); text-shadow: 0 0 20px white; z-index: 10; font-weight: 900; }
+
+        .q-container { background: white; padding: 40px; border-radius: 20px; max-width: 900px; margin: 0 auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .obj-select { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid #eee; margin-top: 8px; cursor: pointer; font-size: 1rem; }
+        .lang-btn { background: var(--gold); color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: bold; font-family: 'Orbitron'; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; width: 450px; max-height: 70vh; overflow-y: auto; }
+
+        /* EARTH GLOBE CONTAINER FROM CODE 2 */
+        #earth-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.3);
+            border: 2px solid rgba(0, 242, 255, 0.5);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        #earth-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .earth-overlay {
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #00f2ff;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            text-shadow: 0 0 10px #00f2ff;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px;
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-layer"></div>
+
+    <div class="top-nav">
+        <button onclick="showPage('page1')" class="lang-btn">HOME</button>
+        <button id="langBtn" onclick="toggleLang()" class="lang-btn">HINDI</button>
+    </div>
+
+    <div id="page1" class="page active">
+        <h1 class="he-parth" id="mainTitle">He Parth!</h1>
+        <div class="flex-container">
+            <div class="column" style="display:flex; flex-direction:column; gap:20px;">
+                <div class="tab-card" onclick="window.open('https://calendar.google.com')">
+                    <div style="text-align:center;">
+                        <div id="calMonth" style="font-weight:700; color:#666;">MONTH</div>
+                        <div id="calDay" style="font-size:3.5rem; font-weight:900; color:var(--gold);">00</div>
+                        <div id="calYear" style="font-weight:600; color:#888;">2026</div>
+                    </div>
+                </div>
+
+                <div class="tab-card">
+                    <b style="color:var(--gold)"><i class="fas fa-hourglass-start"></i> PRECISION AGE</b>
+                    <input type="date" id="dobInput" onchange="startAge()" style="width:100%; margin-top:10px; padding:8px; border:1px solid #ddd;">
+                    <div id="ageDisplay" class="age-text">Your current age is...</div>
+                </div>
+
+                <!-- EARTH GLOBE FROM CODE 2 -->
+                <div class="tab-card" style="overflow: visible;">
+                    <b style="color:var(--gold)"><i class="fas fa-globe-americas"></i> LIVING EARTH</b>
+                    <div id="earth-container">
+                        <canvas id="earth-canvas"></canvas>
+                        <div class="earth-overlay" id="earth-coords">0.000° N, 0.000° E</div>
+                    </div>
+                    <div style="text-align: center; margin-top: 10px; font-size: 0.8rem; color: #666;">
+                        The world is turning. Are you?
+                    </div>
+                </div>
+            </div>
+
+            <div id="todoTab" class="tab-card" onclick="event.stopPropagation()">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                    <i class="fas fa-plus" style="color:var(--gold); cursor:pointer;" onclick="addNote()"></i>
+                    <b id="todoLbl">TO DO</b>
+                    <div>
+                        <i class="fas fa-ellipsis-h" style="color:var(--gold); cursor:pointer; margin-right:12px;" onclick="openHistory()"></i>
+                        <i class="fas fa-times" style="color:var(--gold); cursor:pointer;" onclick="shrinkTodo()"></i>
+                    </div>
+                </div>
+                <div id="activeNoteArea">
+                    <p id="todoHint" style="text-align:center; color:#999; font-size:0.8rem; margin-top:40px;">Manage your Dharma</p>
+                </div>
+            </div>
+
+            <div class="tab-card glow-tab" onclick="showPage('quizPage')">
+                <h3 id="pliLbl" style="margin:0; font-family:'Orbitron';">ACTIVATE PLI SCAN</h3>
+            </div>
+        </div>
+    </div>
+
+    <div id="quizPage" class="page">
+        <div class="q-container">
+            <h2 id="pillarTitle" style="color:var(--gold); font-family:'Cinzel';"></h2>
+            <div id="pillarQuestions" style="max-height:500px; overflow-y:auto; padding-right:15px;"></div>
+            <div style="display:flex; justify-content:space-between; margin-top:30px;">
+                <button class="lang-btn" style="background:#444;" onclick="changePillar(-1)">BACK</button>
+                <button id="nextBtn" class="lang-btn" onclick="changePillar(1)">CONTINUE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="page3" class="page">
+        <div style="text-align:center;">
+            <div class="engine-room">
+                <div class="piston" style="left:50px;"></div>
+                <div class="piston" style="right:50px; animation-delay: 0.2s;"></div>
+                <div class="gear g1"></div>
+                <div class="gear g2"></div>
+                <div class="score-box" id="finalScore">--</div>
+            </div>
+            <h2 id="verdictTitle" style="color:var(--gold); font-family:'Cinzel'; font-size:2.8rem; text-shadow: 2px 2px 10px black;">THE DIVINE VERDICT</h2>
+            <p id="krishnaQuote" style="font-size:1.6rem; color:white; background:rgba(0,0,0,0.6); padding:30px; border-radius:15px; display:inline-block; max-width:850px; font-style:italic; border:2px solid var(--gold);"></p>
+            <br>
+            <button class="lang-btn" style="margin-top:40px; padding:15px 50px;" onclick="location.reload()">NEW SCAN</button>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <h3 id="histTitle">Chronicles</h3>
+            <div id="historyList"></div>
+            <button onclick="document.getElementById('historyModal').style.display='none'" class="lang-btn" style="width:100%; margin-top:20px;">CLOSE</button>
+        </div>
+    </div>
+
+<script>
+    let curLang = 'EN';
+    let pIdx = 0;
+    let notes = JSON.parse(localStorage.getItem('pli_v5')) || [];
+    let ageTimer;
+
+    // THREE.js Earth variables
+    let earthScene, earthCamera, earthRenderer, earthGlobe, earthClouds;
+    let earthRotationSpeed = 0.002;
+    let cloudRotationSpeed = 0.003;
+
+    const ui = {
+        EN: { title: "He Parth!", agePre: "Your current age is ", todo: "TO DO", hint: "Manage your Dharma", next: "CONTINUE", verdict: "THE DIVINE VERDICT" },
+        HI: { title: "हे पार्थ!", agePre: "आपकी वर्तमान आयु है ", todo: "कार्य सूची", hint: "अपना धर्म संभालें", next: "आगे बढ़ें", verdict: "दिव्य निर्णय" }
+    };
+
+    // PILLAR DATA - FULL 50 QUESTIONS (ENGLISH)
+    const pillarsEN = [
+        { title: "Pillar 1: Biological Vitality", qs: [
+            {q: "Circadian rhythm consistency (Sleep/Wake)?", o: ["Perfect", "Average", "None"]},
+            {q: "Resting heart rate status?", o: ["Healthy", "Stressed", "Poor"]},
+            {q: "Daily 10k steps goal?", o: ["Always", "Rarely", "Zero"]},
+            {q: "Water intake (3L)?", o: ["Consistent", "Trying", "Low"]},
+            {q: "Posture quality during work?", o: ["Strong", "Neutral", "Slumped"]},
+            {q: "Whole food percentage in diet?", o: ["High", "Medium", "Low"]},
+            {q: "Sugar/Nicotine intake?", o: ["Zero", "Moderate", "High"]},
+            {q: "Weekly workout minutes?", o: ["150+", "60", "Zero"]},
+            {q: "Flexibility (Toe touch test)?", o: ["Easy", "Stiff", "None"]},
+            {q: "Waking energy levels?", o: ["High", "Normal", "Groggy"]}
+        ]},
+        { title: "Pillar 2: Economic Strength", qs: [
+            {q: "Savings percentage of income?", o: ["20%+", "10%", "Zero"]},
+            {q: "Emergency fund status?", o: ["6 Months", "1 Month", "None"]},
+            {q: "Debt-to-income ratio?", o: ["Zero", "Low", "High"]},
+            {q: "Skill acquisition hours per week?", o: ["10/wk", "2/wk", "Zero"]},
+            {q: "Professional satisfaction level?", o: ["Full", "Fair", "None"]},
+            {q: "5-Year financial roadmap?", o: ["Written", "Mind", "None"]},
+            {q: "Budget discipline?", o: ["Strict", "Average", "Zero"]},
+            {q: "Income streams count?", o: ["Multiple", "Single", "None"]},
+            {q: "Expense tracking frequency?", o: ["Daily", "Weekly", "Rarely"]},
+            {q: "Insurance coverage?", o: ["Full", "Partial", "None"]}
+        ]},
+        { title: "Pillar 3: Cognitive Focus", qs: [
+            {q: "Daily Deep Work hours?", o: ["4+", "1", "Zero"]},
+            {q: "Books read last month?", o: ["2+", "1", "Zero"]},
+            {q: "Phone screen time?", o: ["Low", "Mid", "High"]},
+            {q: "Meditation consistency?", o: ["Daily", "Rare", "None"]},
+            {q: "Attention span quality?", o: ["Strong", "Weak", "Broken"]},
+            {q: "Journaling habits?", o: ["Daily", "Weekly", "Never"]},
+            {q: "Complex problem solving?", o: ["Excited", "Stressed", "Avoid"]},
+            {q: "Mental clarity level?", o: ["Sharp", "Foggy", "Dull"]},
+            {q: "Information diet quality?", o: ["High", "Mixed", "Junk"]},
+            {q: "Decision making speed?", o: ["Fast", "Avg", "Slow"]}
+        ]},
+        { title: "Pillar 4: Social Harmony", qs: [
+            {q: "Circle quality?", o: ["Elite", "Avg", "Toxic"]},
+            {q: "Family bond strength?", o: ["Deep", "Fair", "Weak"]},
+            {q: "Listening skills?", o: ["Pro", "Mid", "Bad"]},
+            {q: "Conflict resolution?", o: ["Calm", "Angry", "Avoid"]},
+            {q: "Community service?", o: ["Active", "Rare", "Zero"]},
+            {q: "Boundary setting?", o: ["Strong", "Mid", "Weak"]},
+            {q: "Public speaking confidence?", o: ["High", "Med", "Low"]},
+            {q: "Empathy levels?", o: ["High", "Avg", "Low"]},
+            {q: "Networking effort?", o: ["High", "Med", "None"]},
+            {q: "Reputation status?", o: ["Solid", "Avg", "Poor"]}
+        ]},
+        { title: "Pillar 5: Existential Purpose", qs: [
+            {q: "Clarity of Dharma?", o: ["Absolute", "Seeking", "None"]},
+            {q: "Gratitude practice?", o: ["Daily", "Rare", "None"]},
+            {q: "Death awareness?", o: ["Healthy", "Scared", "Ignore"]},
+            {q: "Legacy work?", o: ["Active", "Mind", "None"]},
+            {q: "Detachment from results?", o: ["Strong", "Trying", "None"]},
+            {q: "Nature connection?", o: ["Daily", "Weekly", "Zero"]},
+            {q: "Ego control?", o: ["Aware", "Mid", "Blind"]},
+            {q: "Internal peace?", o: ["Steady", "Unstable", "Chaos"]},
+            {q: "Ethical alignment?", o: ["100%", "Partial", "Low"]},
+            {q: "Love for humanity?", o: ["Boundless", "Limited", "None"]}
+        ]}
+    ];
+
+    // PILLAR DATA - FULL 50 QUESTIONS (HINDI)
+    const pillarsHI = [
+        { title: "स्तंभ 1: जैविक जीवन शक्ति", qs: [
+            {q: "आपकी सोने और जागने की दिनचर्या कितनी सुसंगत है?", o: ["पूर्ण", "औसत", "बिल्कुल नहीं"]},
+            {q: "पिछले 7 दिनों में आपकी हृदय गति कैसी रही है?", o: ["स्वस्थ", "तनावपूर्ण", "खराब"]},
+            {q: "क्या आप रोजाना 10,000 कदम चल रहे हैं?", o: ["हमेशा", "कभी-कभी", "बिल्कुल नहीं"]},
+            {q: "क्या आप रोजाना 3 लीटर पानी पीते हैं?", o: ["नियमित", "कोशिश", "कम"]},
+            {q: "काम करते समय आपकी रीढ़ की स्थिति कैसी होती है?", o: ["सीधी", "सामान्य", "झुकी हुई"]},
+            {q: "आपके आहार में प्राकृतिक भोजन का प्रतिशत कितना है?", o: ["80%+", "50%", "कम"]},
+            {q: "चीनी या निकोटीन का सेवन कितना है?", o: ["शून्य", "मध्यम", "उच्च"]},
+            {q: "साप्ताहिक व्यायाम का समय कितना है?", o: ["150 मिनट+", "60 मिनट", "शून्य"]},
+            {q: "क्या आप बिना घुटने मोड़े पैर छू सकते हैं?", o: ["आसानी से", "कठिनाई से", "नहीं"]},
+            {q: "सुबह सोकर उठने पर ऊर्जा का स्तर क्या होता है?", o: ["उच्च", "सामान्य", "सुस्त"]}
+        ]},
+        { title: "स्तंभ 2: आर्थिक शक्ति", qs: [
+            {q: "आपकी आय का कितना प्रतिशत बचत में जाता है?", o: ["20%+", "10%", "शून्य"]},
+            {q: "आपातकालीन निधि (Emergency Fund) की स्थिति क्या है?", o: ["6 महीने", "1 महीना", "शून्य"]},
+            {q: "क्या आपका कर्ज आय के अनुपात में कम है?", o: ["कोई कर्ज नहीं", "प्रबंधनीय", "अधिक"]},
+            {q: "कौशल सीखने में साप्ताहिक समय?", o: ["10 घंटे+", "2 घंटे", "शून्य"]},
+            {q: "वर्तमान कार्य से संतुष्टि का स्तर?", o: ["पूर्ण", "ठीक है", "बिल्कुल नहीं"]},
+            {q: "क्या आपके पास लिखित 5 साल का रोडमैप है?", o: ["हाँ", "दिमाग में है", "नहीं"]},
+            {q: "बजट अनुशासन का स्तर क्या है?", o: ["सख्त", "सामान्य", "शून्य"]},
+            {q: "आय के कितने स्रोत हैं?", o: ["एक से अधिक", "केवल एक", "शून्य"]},
+            {q: "खर्चों पर नज़र रखने की आवृत्ति?", o: ["दैनिक", "साप्ताहिक", "कभी नहीं"]},
+            {q: "क्या आपका बीमा (Insurance) पर्याप्त है?", o: ["पूर्ण", "आंशिक", "शून्य"]}
+        ]},
+        { title: "स्तंभ 3: संज्ञानात्मक फोकस", qs: [
+            {q: "दैनिक 'डीप वर्क' (गहरा काम) के घंटे?", o: ["4+", "1", "शून्य"]},
+            {q: "पिछले महीने पढ़ी गई पुस्तकें?", o: ["2+", "1", "शून्य"]},
+            {q: "फोन स्क्रीन टाइम (बिना काम के)?", o: ["कम", "मध्यम", "उच्च"]},
+            {q: "ध्यान (Meditation) की निरंतरता?", o: ["दैनिक", "दुर्लभ", "कभी नहीं"]},
+            {q: "एकाग्रता की गुणवत्ता कैसी है?", o: ["मजबूत", "कमजोर", "बिखरी हुई"]},
+            {q: "क्या आप नियमित रूप से डायरी लिखते हैं?", o: ["हाँ", "कभी-कभी", "नहीं"]},
+            {q: "जटिल समस्याओं को हल करने का उत्साह?", o: ["अधिक", "मध्यम", "तनावपूर्ण"]},
+            {q: "मानसिक स्पष्टता का स्तर?", o: ["तेज", "धुंधला", "सुस्त"]},
+            {q: "आपके द्वारा ली जाने वाली जानकारी की गुणवत्ता?", o: ["उच्च", "मिश्रित", "बेकार"]},
+            {q: "निर्णय लेने की गति?", o: ["तेज", "औसत", "धीमी"]}
+        ]},
+        { title: "स्तंभ 4: सामाजिक सद्भाव", qs: [
+            {q: "आपके मित्रों की गुणवत्ता?", o: ["उत्कृष्ट", "औसत", "विषाक्त"]},
+            {q: "पारिवारिक संबंधों की गहराई?", o: ["गहरी", "ठीक है", "कमजोर"]},
+            {q: "सुनने और समझने का कौशल?", o: ["बेहतरीन", "सामान्य", "खराब"]},
+            {q: "विवाद सुलझाने का तरीका?", o: ["शांत", "क्रोधित", "बचना"]},
+            {q: "समाज सेवा में योगदान?", o: ["सक्रिय", "दुर्लभ", "शून्य"]},
+            {q: "अपनी सीमाएं (Boundaries) निर्धारित करना?", o: ["मजबूत", "मध्यम", "कमजोर"]},
+            {q: "सार्वजनिक बोलने का आत्मविश्वास?", o: ["उच्च", "मध्यम", "कम"]},
+            {q: "सहानुभूति (Empathy) का स्तर?", o: ["उच्च", "औसत", "कम"]},
+            {q: "नेटवर्किंग के लिए प्रयास?", o: ["अधिक", "औसत", "नहीं"]},
+            {q: "आपकी प्रतिष्ठा की स्थिति?", o: ["ठोस", "औसत", "खराब"]}
+        ]},
+        { title: "स्तंभ 5: अस्तित्वगत उद्देश्य", qs: [
+            {q: "अपने धर्म (Dharma) की स्पष्टता?", o: ["पूर्ण", "खोज जारी", "शून्य"]},
+            {q: "कृतज्ञता (Gratitude) का अभ्यास?", o: ["दैनिक", "दुर्लभ", "नहीं"]},
+            {q: "मृत्यु के प्रति जागरूकता?", o: ["स्वस्थ", "डरा हुआ", "अनदेखा"]},
+            {q: "क्या आप विरासत (Legacy) पर काम कर रहे हैं?", o: ["सक्रिय", "सोच में", "नहीं"]},
+            {q: "परिणामों से विरक्ति (Detachment)?", o: ["मजबूत", "कोशिश", "नहीं"]},
+            {q: "प्रकृति से जुड़ाव?", o: ["दैनिक", "साप्ताहिक", "शून्य"]},
+            {q: "अहंकार (Ego) पर नियंत्रण?", o: ["जागरूक", "मध्यम", "अंधा"]},
+            {q: "आंतरिक शांति का स्तर?", o: ["स्थिर", "अस्थिर", "अशांति"]},
+            {q: "क्या आपके कार्य नैतिकता के अनुरूप हैं?", o: ["100%", "आंशिक", "कम"]},
+            {q: "मानवता के प्रति प्रेम?", o: ["असीम", "सीमित", "नहीं"]}
+        ]}
+    ];
+
+    // KRISHNA QUOTE DATA
+    const quotesEN = ["He Parth! Duty is its own reward.", "He Parth! Focus on action, not the fruit.", "He Parth! Change is the law of the universe.","He Parth! You have a right to perform your duty, but never to the fruits of action.",
+
+"He Parth! Let not the fruits of action be your motive, nor let your attachment be to inaction.",
+
+"He Parth! Yoga is the journey of the self, through the self, to the self.",
+
+"He Parth! The soul is never born and it never dies.",
+
+"He Parth! Weapons cannot cut the soul, nor can fire burn it.",
+
+"He Parth! Water cannot wet the soul, nor can wind dry it.",
+
+"He Parth! Change is the law of the universe.",
+
+"He Parth! You can be a millionaire or a pauper in an instant.",
+
+"He Parth! Death is as certain for the born as birth is for the dead.",
+
+"He Parth! Whatever happened, happened for the good.",
+
+"He Parth! Whatever is happening, is happening for the good.",
+
+"He Parth! Whatever will happen, will also happen for the good.",
+
+"He Parth! You do not need to worry about the future.",
+
+"He Parth! Do not shed tears for the past.",
+
+"He Parth! What did you lose that you cry for?",
+
+"He Parth! What did you bring with you that you think you have lost?",
+
+"He Parth! What did you produce, which you think got destroyed?",
+
+"He Parth! You did not bring anything when you were born.",
+
+"He Parth! Whatever you have, you received from here.",
+
+"He Parth! Whatever you gave, you gave here.",
+
+"He Parth! You came empty-handed, and you will leave empty-handed.",
+
+"He Parth! What is yours today, belonged to someone else yesterday.",
+
+"He Parth! What is yours today will belong to someone else the day after tomorrow.",
+
+"He Parth! Possession is an illusion of the mind.",
+
+"He Parth! Lust, anger, and greed are the three gates to self-destruction.",
+
+"He Parth! From anger comes delusion; from delusion, loss of memory.",
+
+"He Parth! When memory is lost, discrimination is lost.",
+
+"He Parth! When discrimination is lost, the man perishes.",
+
+"He Parth! The mind is restless and difficult to restrain.",
+
+"He Parth! The mind can be tamed by practice and detachment.",
+
+"He Parth! For one who has conquered the mind, the mind is the best of friends.",
+
+"He Parth! For one who has failed to conquer the mind, it is the greatest enemy.",
+
+"He Parth! A man is made by his belief; as he believes, so he is.",
+
+"He Parth! Perform your worldly duties with your heart fixed on Me.",
+
+"He Parth! I am the beginning, the middle, and the end of all creation.",
+
+"He Parth! I am the heat in the sun and the light in the moon.",
+
+"He Parth! I am the syllable 'Om' in all the Vedas.",
+
+"He Parth! I am the fragrance of the earth and the heat in fire.",
+
+"He Parth! I am the life in all living beings.",
+
+"He Parth! I am the intelligence of the intelligent.",
+
+"He Parth! I am the prowess of the powerful.",
+
+"He Parth! Everything is a manifestation of My divine energy.",
+
+"He Parth! He who sees Me in everything and everything in Me is never lost.",
+
+"He Parth! Among the stars, I am the moon.",
+
+"He Parth! Among the senses, I am the mind.",
+
+"He Parth! Among the mountains, I am Meru.",
+
+"He Parth! I am the time that destroys all things.",
+
+"He Parth! To those who are constantly devoted, I give understanding.",
+
+"He Parth! I am the same to all beings; to Me, none is hateful and none is dear.",
+
+"He Parth! But those who worship Me with devotion are in Me, and I am in them.",
+
+"He Parth! Abandon all varieties of religion and just surrender to Me.",
+
+"He Parth! I shall deliver you from all sinful reactions; do not fear.",
+
+"He Parth! The wise grieve neither for the living nor for the dead.",
+
+"He Parth! Action is better than inaction.",
+
+"He Parth! Even the maintenance of your body would be impossible without action.",
+
+"He Parth! Do your work with the welfare of others always in mind.",
+
+"He Parth! A self-controlled person enjoys great peace.",
+
+"He Parth! There is no happiness for the unsteady mind.",
+
+"He Parth! As a person puts on new garments, the soul puts on new bodies.",
+
+"He Parth! The enlightened see a learned priest, a cow, an elephant, and a dog with equal vision.",
+
+"He Parth! One who is humble and wise sees equality everywhere.",
+
+"He Parth! Attachment to objects of the senses leads to desire.",
+
+"He Parth! Desire leads to anger when it is not fulfilled.",
+
+"He Parth! Contentment is the greatest wealth.",
+
+"He Parth! He who has no attachments can truly love.",
+
+"He Parth! Experience the cold and heat, pleasure and pain, as they come and go.",
+
+"He Parth! They are fleeting; endure them bravely.",
+
+"He Parth! Steadfastness in knowledge is the mark of the wise.",
+
+"He Parth! True knowledge is knowing the difference between the body and the soul.",
+
+"He Parth! He who sees the Supreme Lord in all beings does not perish.",
+
+"He Parth! Faith moves mountains, but doubt destroys the soul.",
+
+"He Parth! For the doubting soul, there is happiness neither in this world nor the next.",
+
+"He Parth! Become an instrument of My work.",
+
+"He Parth! The peace of God is with those whose mind and soul are in harmony.",
+
+"He Parth! He who is free from 'I' and 'mine' attains peace.",
+
+"He Parth! In whatever way men identify with Me, in the same way do I carry out their desires.",
+
+"He Parth! All paths lead to Me eventually.",
+
+"He Parth! Work is worship if done without ego.",
+
+"He Parth! The power of God is with you at all times.",
+
+"He Parth! Surrender your ego at the feet of the Divine.",
+
+"He Parth! I am the seed of all existence.",
+
+"He Parth! No one who does good work will ever come to a bad end.",
+
+"He Parth! I am the taste in the water.",
+
+"He Parth! I am the silence of secrets.",
+
+"He Parth! I am the wisdom of the wise.",
+
+"He Parth! I am the strength of the strong, devoid of desire and passion.",
+
+"He Parth! I am the original seed of all existences.",
+
+"He Parth! I am the father of this universe, the mother, and the grandfather.",
+
+"He Parth! I am the goal, the upholder, the lord, and the witness.",
+
+"He Parth! I am the abode, the refuge, and the friend.",
+
+"He Parth! Even if the most sinful worships Me with undivided heart, he is holy.",
+
+"He Parth! He who offers Me a leaf, a flower, or water with love, I accept it.",
+
+"He Parth! The world is a bridge; pass over it, but build no house upon it.",
+
+"He Parth! The senses are higher than the body.",
+
+"He Parth! The mind is higher than the senses.",
+
+"He Parth! The intellect is higher than the mind.",
+
+"He Parth! The soul is higher than the intellect.",
+
+"He Parth! Calmness, gentleness, and silence are the virtues of the mind.",
+
+"He Parth! Purity of heart is the gateway to God.",
+
+"He Parth! Always think of Me, become My devotee, and you shall come to Me.",
+
+"He Parth! Fear not what is not real.",
+
+"He Parth! Never was there a time when I did not exist, nor you.",
+
+"He Parth! Truth can never be destroyed.",
+
+"He Parth! The unreal has no existence; the real never ceases to be.",
+
+"He Parth! Focus on the process, not the outcome.",
+
+"He Parth! Treat joy and sorrow as the same.",
+
+"He Parth! Treat gain and loss as the same.",
+
+"He Parth! Treat victory and defeat as the same.",
+
+"He Parth! Only then will you be free from sin.",
+
+"He Parth! Calmness of mind is the highest virtue.",
+
+"He Parth! Be steadfast in yoga, O Arjuna.",
+
+"He Parth! Perform your duty without attachment to the result.",
+
+"He Parth! One who sees inaction in action is wise.",
+
+"He Parth! One who sees action in inaction is truly intelligent.",
+
+"He Parth! Knowledge is the ultimate sacrifice.",
+
+"He Parth! All actions culminate in spiritual knowledge.",
+
+"He Parth! As a blazing fire turns firewood to ashes, knowledge burns all karma.",
+
+"He Parth! There is nothing as pure as wisdom.",
+
+"He Parth! He who has faith attains knowledge.",
+
+"He Parth! Doubts are born of ignorance; slash them with the sword of wisdom.",
+
+"He Parth! Renunciation and action both lead to the highest goal.",
+
+"He Parth! But selfless action is superior to mere renunciation.",
+
+"He Parth! A true yogi sees himself in all beings.",
+
+"He Parth! A true yogi sees all beings in himself.",
+
+"He Parth! He who is equal in honor and dishonor is dear to Me.",
+
+"He Parth! He who is the same to friend and foe is wise.",
+
+"He Parth! Be unattached to the home and the family for the sake of the soul.",
+
+"He Parth! Constancy in self-knowledge is the way.",
+
+"He Parth! I am the light of the sun that illumines the entire world.",
+
+"He Parth! I am the moon that nourishes all herbs.",
+
+"He Parth! I am the fire of digestion in the bodies of all living entities.",
+
+"He Parth! I am seated in everyone's heart.",
+
+"He Parth! From Me come memory, knowledge, and forgetfulness.",
+
+"He Parth! There are two kinds of beings: the perishable and the imperishable.",
+
+"He Parth! The soul is the imperishable within the perishable.",
+
+"He Parth! Beyond both is the Supreme Personality of Godhead.",
+
+"He Parth! He who knows Me as the Supreme Person knows everything.",
+
+"He Parth! The scriptures are your guide in determining what should be done.",
+
+"He Parth! Acts of sacrifice, charity, and penance should never be given up.",
+
+"He Parth! Even for the wise, these acts are purifying.",
+
+"He Parth! Giving up action because of fear of physical strain is wrong.",
+
+"He Parth! Charity given without expectation of return is pure.",
+
+"He Parth! Charity given with the hope of a reward is passionate.",
+
+"He Parth! Charity given at the wrong time or place is ignorant.",
+
+"He Parth! Happiness that comes from the soul is long-lasting.",
+
+"He Parth! Happiness from the senses is like nectar at first, but poison at last.",
+
+"He Parth! By devotion one can know Me as I am.",
+
+"He Parth! Having known Me, one enters My divine abode.",
+
+"He Parth! In all circumstances, remember Me.",
+
+"He Parth! I am the thread on which all pearls of the universe are strung.",
+
+"He Parth! Every action has a reaction; choose wisely.",
+
+"He Parth! Silence is the speech of the spirit.",
+
+"He Parth! A disciplined mind leads to happiness.",
+
+"He Parth! An undisciplined mind leads to suffering.",
+
+"He Parth! Do not let your ego guide your path.",
+
+"He Parth! Humility is the first step toward greatness.",
+
+"He Parth! Forgiveness is the strength of the virtuous.",
+
+"He Parth! Patience is the key to all doors.",
+
+"He Parth! Compassion is the highest religion.",
+
+"He Parth! See God in the poor and the suffering.",
+
+"He Parth! Serve humanity to serve Me.",
+
+"He Parth! The body is a temple; keep it pure.",
+
+"He Parth! Moderation is the path to health and peace.",
+
+"He Parth! Too much sleep or too little sleep is not for a yogi.",
+
+"He Parth! Too much food or too little food is not for a yogi.",
+
+"He Parth! Balance is the essence of life.",
+
+"He Parth! Your thoughts create your reality.",
+
+"He Parth! To think of Me is to be with Me.",
+
+"He Parth! Distance is only for the body, not the soul.",
+
+"He Parth! I am always with you, even when you feel alone.",
+
+"He Parth! Let go of what you cannot control.",
+
+"He Parth! Trust in the divine plan.",
+
+"He Parth! Every ending is a new beginning.",
+
+"He Parth! Life is a dream; wake up to the truth.",
+
+"He Parth! You are a soul having a human experience.",
+
+"He Parth! Do not identify with the roles you play.",
+
+"He Parth! You are not the body; you are the driver of the body.",
+
+"He Parth! Focus on the eternal, not the temporary.",
+
+"He Parth! The world is a stage; play your part well.",
+
+"He Parth! Detachment does not mean not caring.",
+
+"He Parth! Detachment means not being enslaved by the result.",
+
+"He Parth! Love without expectation is the highest love.",
+
+"He Parth! Give without remembering; receive without forgetting.",
+
+"He Parth! Wisdom is the bridge between the human and the divine.",
+
+"He Parth! Meditation is the tool to still the waves of the mind.",
+
+"He Parth! In the stillness of the mind, God is revealed.",
+
+"He Parth! I am the Om, the primordial sound.",
+
+"He Parth! I am the silence between two thoughts.",
+
+"He Parth! Every breath is a gift from the Divine.",
+
+"He Parth! Use your life for a higher purpose.",
+
+"He Parth! Selfishness is a small cage.",
+
+"He Parth! Selflessness is the vast sky.",
+
+"He Parth! Be like a lotus, which grows in water but stays dry.",
+
+"He Parth! Live in the world, but be not of the world.",
+
+"He Parth! Your character is your true wealth.",
+
+"He Parth! Integrity is doing the right thing when no one is watching.",
+
+"He Parth! Truth is one, but sages call it by many names.",
+
+"He Parth! All religions are rivers leading to the same ocean.",
+
+"He Parth! Respect all, for I dwell in all.",
+
+"He Parth! Kindness is the language of the soul.",
+
+"He Parth! Hate the sin, not the sinner.",
+
+"He Parth! Everyone is fighting a hard battle; be kind.",
+
+"He Parth! Your duty is your greatest religion.",
+
+"He Parth! Work with love, and work becomes prayer.",
+
+"He Parth! The reward for a good deed is the deed itself.",
+
+"He Parth! Peace starts within you.",
+
+"He Parth! A peaceful heart makes a peaceful world.",
+
+"He Parth! Do not be troubled by the opinions of others.",
+
+"He Parth! Follow your conscience, for it is My voice.",
+
+"He Parth! Courage is the hallmark of a devotee.",
+
+"He Parth! Fear is an illusion of the ego.",
+
+"He Parth! Surrender your fears to Me.",
+
+"He Parth! I am the strength in your weakness.",
+
+"He Parth! I am the hope in your despair.",
+
+"He Parth! Believe in yourself, for I believe in you.",
+
+"He Parth! You are capable of infinite things.",
+
+"He Parth! Limitations are only in the mind.",
+
+"He Parth! The soul has no limits.",
+
+"He Parth! Time is the greatest teacher.",
+
+"He Parth! Nature is My living garment.",
+
+"He Parth! Protect the earth, for it is My creation.",
+
+"He Parth! See the divine in every flower and tree.",
+
+"He Parth! Animals are your fellow travelers; treat them with love.",
+
+"He Parth! A non-violent heart is a holy heart.",
+
+"He Parth! Truth is the foundation of the universe.",
+
+"He Parth! Speak the truth, but speak it with kindness.",
+
+"He Parth! A harsh truth is better than a sweet lie.",
+
+"He Parth! Honesty is the path to clarity.",
+
+"He Parth! Simplicity is the ultimate sophistication.",
+
+"He Parth! High thinking and simple living should be the goal.",
+
+"He Parth! Pride goes before a fall.",
+
+"He Parth! Vanity is a veil that hides the truth.",
+
+"He Parth! Be humble like the grass that survives the storm.",
+
+"He Parth! Greatness is found in service.",
+
+"He Parth! The more you give, the more you have.",
+
+"He Parth! Knowledge increases by sharing.",
+
+"He Parth! Love multiplies by giving.",
+
+"He Parth! Sorrow divides by sharing.",
+
+"He Parth! Keep your mind on the goal.",
+
+"He Parth! Obstacles are opportunities in disguise.",
+
+"He Parth! Every failure is a step toward success.",
+
+"He Parth! Do not give up, even when the path is dark.",
+
+"He Parth! I am the light that guides you through the night.",
+
+"He Parth! Prayer is the direct line to the Divine.",
+
+"He Parth! Chant My name and find peace.",
+
+"He Parth! Every name of God is a door to the same room.",
+
+"He Parth! Faith is the eye of the soul.",
+
+"He Parth! Doubt is the fog of the mind.",
+
+"He Parth! Clear the fog with the sun of faith.",
+
+"He Parth! You are never alone; I am closer than your breath.",
+
+"He Parth! The world is a school; learn your lessons well.",
+
+"He Parth! Karma is the teacher that never fails.",
+
+"He Parth! Do not blame others for your fate.",
+
+"He Parth! You are the architect of your own destiny." ,"He Parth! Be a warrior of light."];
+    const quotesHI = [
+        "कर्म ही तुम्हारा अधिकार है, फल नहीं।", 
+        "परिवर्तन ही संसार का नियम है।", 
+        "आत्मा अजर अमर है, इसे कोई शस्त्र काट नहीं सकता।",
+        "क्रोध से भ्रम पैदा होता है, और भ्रम से बुद्धि नष्ट होती है।","हे पार्थ! तुम्हें अपने कर्तव्य का पालन करने का अधिकार है, लेकिन कर्म के फलों पर कभी नहीं।",
+
+"हे पार्थ! कर्म के फल को अपना उद्देश्य मत बनाओ, और न ही तुम्हारी आसक्ति अकर्मण्य (काम न करने) में हो।",
+
+"हे पार्थ! योग स्वयं की, स्वयं के माध्यम से, स्वयं तक की यात्रा है।",
+
+"हे पार्थ! आत्मा न कभी जन्म लेती है और न ही कभी मरती है।",
+
+"हे पार्थ! शस्त्र आत्मा को काट नहीं सकते, और न ही अग्नि इसे जला सकती है।",
+
+"हे पार्थ! जल आत्मा को भिगो नहीं सकता, और न ही वायु इसे सुखा सकती है।",
+
+"हे पार्थ! परिवर्तन ही संसार का नियम है।",
+
+"हे पार्थ! तुम एक पल में करोड़पति या कंगाल हो सकते हो।",
+
+"हे पार्थ! जन्म लेने वाले के लिए मृत्यु उतनी ही निश्चित है जितना कि मृत के लिए पुनर्जन्म।",
+
+"हे पार्थ! जो कुछ भी हुआ, अच्छे के लिए हुआ।",
+
+"हे पार्थ! जो कुछ भी हो रहा है, वह अच्छे के लिए हो रहा है।",
+
+"हे पार्थ! जो कुछ भी होगा, वह भी अच्छे के लिए ही होगा।",
+
+"हे पार्थ! तुम्हें भविष्य की चिंता करने की आवश्यकता नहीं है।",
+
+"हे पार्थ! अतीत के लिए आंसू मत बहाओ।",
+
+"हे पार्थ! तुमने क्या खोया जिसके लिए तुम रोते हो?",
+
+"हे पार्थ! तुम अपने साथ क्या लाए थे जो तुम्हें लगता है कि तुमने खो दिया है?",
+
+"हे पार्थ! तुमने क्या पैदा किया था, जो तुम्हें लगता है कि नष्ट हो गया?",
+
+"हे पार्थ! जब तुम पैदा हुए थे तब तुम कुछ भी साथ नहीं लाए थे।",
+
+"हे पार्थ! तुम्हारे पास जो कुछ भी है, यहीं से प्राप्त हुआ है।",
+
+"हे पार्थ! तुमने जो कुछ भी दिया, यहीं दिया।",
+
+"हे पार्थ! तुम खाली हाथ आए थे, और तुम खाली हाथ ही जाओगे।",
+
+"हे पार्थ! जो आज तुम्हारा है, कल किसी और का था।",
+
+"हे पार्थ! जो आज तुम्हारा है, परसों किसी और का होगा।",
+
+"हे पार्थ! अधिकार की भावना मन का एक भ्रम है।",
+
+"हे पार्थ! काम, क्रोध और लोभ आत्म-विनाश के तीन द्वार हैं।",
+
+"हे पार्थ! क्रोध से भ्रम पैदा होता है; भ्रम से बुद्धि व्यग्र होती है।",
+
+"हे पार्थ! जब स्मृति भ्रमित होती है, तो विवेक नष्ट हो जाता है।",
+
+"हे पार्थ! जब विवेक नष्ट होता है, तो मनुष्य का पतन हो जाता है।",
+
+"हे पार्थ! मन चंचल है और इसे नियंत्रित करना कठिन है।",
+
+"हे पार्थ! मन को अभ्यास और वैराग्य से वश में किया जा सकता है।",
+
+"हे पार्थ! जिसने मन को जीत लिया है, उसके लिए मन सबसे अच्छा मित्र है।",
+
+"हे पार्थ! जो मन को जीतने में असफल रहा है, उसके लिए यह सबसे बड़ा शत्रु है।",
+
+"हे पार्थ! मनुष्य अपने विश्वास से निर्मित होता है; जैसा वह विश्वास करता है, वैसा ही वह बन जाता है।",
+
+"हे पार्थ! अपने सांसारिक कर्तव्यों को मुझमें मन लगाकर पूरा करो।",
+
+"हे पार्थ! मैं ही समस्त सृष्टि का आदि, मध्य और अंत हूँ।",
+
+"हे पार्थ! मैं सूर्य में ताप हूँ और चंद्रमा में प्रकाश हूँ।",
+
+"हे पार्थ! मैं सभी वेदों में 'ओंकार' (ॐ) हूँ।",
+
+"हे पार्थ! मैं पृथ्वी की सुगंध और अग्नि की ऊष्मा हूँ।",
+
+"हे पार्थ! मैं सभी जीवित प्राणियों में जीवन हूँ।",
+
+"हे पार्थ! मैं बुद्धिमानों की बुद्धि हूँ।",
+
+"हे पार्थ! मैं शक्तिशालियों का सामर्थ्य हूँ।",
+
+"हे पार्थ! सब कुछ मेरी दिव्य ऊर्जा की ही अभिव्यक्ति है।",
+
+"हे पार्थ! वह जो मुझे सब में और सब कुछ मुझ में देखता है, वह कभी ओझल नहीं होता।",
+
+"हे पार्थ! नक्षत्रों में, मैं चंद्रमा हूँ।",
+
+"हे पार्थ! इंद्रियों में, मैं मन हूँ।",
+
+"हे पार्थ! पर्वतों में, मैं सुमेरु हूँ।",
+
+"हे पार्थ! मैं वह समय हूँ जो सब कुछ नष्ट कर देता है।",
+
+"हे पार्थ! जो निरंतर मुझ में समर्पित हैं, उन्हें मैं ज्ञान देता हूँ।",
+
+"हे पार्थ! मैं सभी प्राणियों के लिए समान हूँ; मेरे लिए न कोई अप्रिय है और न ही कोई प्रिय।",
+
+"हे पार्थ! लेकिन जो भक्ति के साथ मेरी पूजा करते हैं, वे मुझमें हैं और मैं उनमें हूँ।",
+
+"हे पार्थ! सभी धर्मों को त्यागकर बस मेरी शरण में आओ।",
+
+"हे पार्थ! मैं तुम्हें सभी पापों से मुक्त कर दूँगा; डरो मत।",
+
+"हे पार्थ! बुद्धिमान व्यक्ति न जीवित के लिए शोक करते हैं और न ही मृत के लिए।",
+
+"हे पार्थ! कर्म न करने से बेहतर कर्म करना है।",
+
+"हे पार्थ! कर्म के बिना तुम्हारे शरीर का निर्वाह भी असंभव होगा।",
+
+"हे पार्थ! दूसरों के कल्याण को हमेशा ध्यान में रखकर अपना कार्य करो।",
+
+"हे पार्थ! एक आत्म-संयमी व्यक्ति अपार शांति का आनंद लेता है।",
+
+"हे पार्थ! अस्थिर मन वाले के लिए कोई सुख नहीं है।",
+
+"हे पार्थ! जैसे मनुष्य पुराने वस्त्र त्यागकर नए पहनता है, वैसे ही आत्मा पुराने शरीरों को त्यागकर नए धारण करती है।",
+
+"हे पार्थ! ज्ञानी जन एक विद्वान ब्राह्मण, गाय, हाथी और कुत्ते को समान दृष्टि से देखते हैं।",
+
+"हे पार्थ! जो विनम्र और बुद्धिमान है, वह हर जगह समानता देखता है।",
+
+"हे पार्थ! इंद्रियों की वस्तुओं के प्रति आसक्ति से इच्छा (कामना) पैदा होती है।",
+
+"हे पार्थ! जब इच्छा पूरी नहीं होती, तो क्रोध उत्पन्न होता है।",
+
+"हे पार्थ! संतोष ही सबसे बड़ा धन है।",
+
+"हे पार्थ! जिसके पास कोई आसक्ति नहीं है, वही सच्चा प्रेम कर सकता।",
+
+"हे पार्थ! सर्दी-गर्मी, सुख-दुख को वैसे ही अनुभव करो जैसे वे आते और जाते हैं।",
+
+"हे पार्थ! वे क्षणभंगुर हैं; उन्हें बहादुरी से सहन करो।",
+
+"हे पार्थ! ज्ञान में अडिग रहना ही बुद्धिमानों की पहचान है।",
+
+"हे पार्थ! सच्चा ज्ञान शरीर और आत्मा के बीच के अंतर को जानना है।",
+
+"हे पार्थ! जो सभी प्राणियों में परमेश्वर को देखता है, वह कभी नष्ट नहीं होता।",
+
+"हे पार्थ! विश्वास पहाड़ों को हिला सकता है, लेकिन संदेह आत्मा को नष्ट कर देता है।",
+
+"हे पार्थ! संशय करने वाली आत्मा के लिए न इस लोक में सुख है और न ही परलोक में।",
+
+"हे पार्थ! मेरे कार्य का निमित्त बनो।",
+
+"हे पार्थ! ईश्वर की शांति उनके साथ है जिनका मन और आत्मा सामंजस्य में हैं।",
+
+"हे पार्थ! जो 'मैं' और 'मेरा' से मुक्त है, वही शांति प्राप्त करता है।",
+
+"हे पार्थ! मनुष्य जिस रूप में मुझे भजते हैं, मैं उसी रूप में उनकी इच्छाएँ पूरी करता हूँ।",
+
+"हे पार्थ! सभी मार्ग अंततः मुझ तक ही आते हैं।",
+
+"हे पार्थ! यदि अहंकार के बिना किया जाए, तो कार्य ही पूजा है।",
+
+"हे पार्थ! ईश्वर की शक्ति हर समय तुम्हारे साथ है।",
+
+"हे पार्थ! अपने अहंकार को परमात्मा के चरणों में समर्पित कर दो।",
+
+"हे पार्थ! मैं ही समस्त अस्तित्व का बीज हूँ।",
+
+"हे पार्थ! अच्छा काम करने वाले का कभी बुरा अंत नहीं होता।",
+
+"हे पार्थ! मैं जल में स्वाद हूँ।",
+
+"हे पार्थ! मैं रहस्यों का मौन हूँ।",
+
+"हे पार्थ! मैं बुद्धिमानों की बुद्धिमत्ता हूँ।",
+
+"हे पार्थ! मैं बलवानों का वह बल हूँ जो इच्छा और वासना से रहित है।",
+
+"हे पार्थ! मैं सभी अस्तित्वों का मूल बीज हूँ।",
+
+"हे पार्थ! मैं इस ब्रह्मांड का पिता, माता और पितामह हूँ।",
+
+"हे पार्थ! मैं ही लक्ष्य, पालनकर्ता, स्वामी और साक्षी हूँ।",
+
+"हे पार्थ! मैं ही निवास, शरण और मित्र हूँ।",
+
+"हे पार्थ! यदि अत्यंत पापी भी अनन्य भाव से मुझे भजता है, तो वह पवित्र है।",
+
+"हे पार्थ! जो मुझे प्रेम से पत्र, पुष्प या जल अर्पित करता है, मैं उसे स्वीकार करता हूँ।",
+
+"हे पार्थ! संसार एक पुल है; इसे पार करो, लेकिन इस पर घर मत बनाओ।",
+
+"हे पार्थ! इंद्रियाँ शरीर से श्रेष्ठ हैं।",
+
+"हे पार्थ! मन इंद्रियों से श्रेष्ठ है।",
+
+"हे पार्थ! बुद्धि मन से श्रेष्ठ है।",
+
+"हे पार्थ! आत्मा बुद्धि से भी श्रेष्ठ है।",
+
+"हे पार्थ! शांति, सौम्यता और मौन मन के गुण हैं।",
+
+"हे पार्थ! हृदय की शुद्धि ईश्वर का द्वार है।",
+
+"हे पार्थ! सदैव मेरा चिंतन करो, मेरे भक्त बनो, और तुम मुझ तक पहुँचोगे।",
+
+"हे पार्थ! जो वास्तविक नहीं है, उससे डरो मत।",
+
+"हे पार्थ! ऐसा कभी नहीं था जब मैं अस्तित्व में नहीं था, और न ही तुम।",
+
+"हे पार्थ! सत्य को कभी नष्ट नहीं किया जा सकता।",
+
+"हे पार्थ! असत्य का कोई अस्तित्व नहीं है; सत्य का कभी अंत नहीं होता।",
+
+"हे पार्थ! प्रक्रिया पर ध्यान दें, परिणाम पर नहीं।",
+
+"हे पार्थ! सुख और दुख को एक समान समझो।",
+
+"हे पार्थ! लाभ और हानि को एक समान समझो।",
+
+"हे पार्थ! जीत और हार को एक समान समझो।",
+
+"हे पार्थ! केवल तभी तुम पाप से मुक्त हो सकोगे।",
+
+"हे पार्थ! मन की शांति ही सर्वोच्च गुण है।",
+
+"हे पार्थ! हे अर्जुन, योग में अडिग रहो।",
+
+"हे पार्थ! फल की आसक्ति के बिना अपना कर्तव्य निभाओ।",
+
+"हे पार्थ! जो कर्म में अकर्म देखता है, वही बुद्धिमान है।",
+
+"हे पार्थ! जो अकर्म में कर्म देखता है, वह वास्तव में बुद्धिमान है।",
+
+"हे पार्थ! ज्ञान ही परम यज्ञ है।",
+
+"हे पार्थ! सभी कर्म आध्यात्मिक ज्ञान में समाप्त होते हैं।",
+
+"हे पार्थ! जैसे प्रज्वलित अग्नि लकड़ी को राख कर देती है, वैसे ही ज्ञान सभी कर्मों को जला देता है।",
+
+"हे पार्थ! ज्ञान के समान पवित्र कुछ भी नहीं है।",
+
+"हे पार्थ! जिसके पास श्रद्धा है, वह ज्ञान प्राप्त करता है।",
+
+"हे पार्थ! संदेह अज्ञान से पैदा होते हैं; उन्हें ज्ञान की तलवार से काट दो।",
+
+"हे पार्थ! संन्यास और कर्म दोनों ही सर्वोच्च लक्ष्य की ओर ले जाते हैं।",
+
+"हे पार्थ! लेकिन निष्काम कर्म केवल संन्यास से श्रेष्ठ है।",
+
+"हे पार्थ! एक सच्चा योगी सभी प्राणियों में स्वयं को देखता है।",
+
+"हे पार्थ! एक सच्चा योगी सभी प्राणियों को अपने अंदर देखता है।",
+
+"हे पार्थ! वह जो मान और अपमान में समान रहता है, वह मुझे प्रिय है।",
+
+"हे पार्थ! वह जो मित्र और शत्रु के लिए एक जैसा है, वह ज्ञानी है।",
+
+"हे पार्थ! आत्मा के हित के लिए घर और परिवार के प्रति अनासक्त रहो।",
+
+"हे पार्थ! आत्म-ज्ञान में निरंतरता ही मार्ग है।",
+
+"हे पार्थ! मैं सूर्य का वह प्रकाश हूँ जो संपूर्ण विश्व को आलोकित करता है।",
+
+"हे पार्थ! मैं वह चंद्रमा हूँ जो सभी औषधियों को पोषण देता है।",
+
+"हे पार्थ! मैं सभी जीवित प्राणियों के शरीर में जठराग्नि (पाचन की अग्नि) हूँ।",
+
+"हे पार्थ! मैं प्रत्येक के हृदय में विराजमान हूँ।",
+
+"हे पार्थ! मुझसे ही स्मृति, ज्ञान और विस्मृति आते हैं।",
+
+"हे पार्थ! दो प्रकार के प्राणी हैं: नाशवान और अविनाशी।",
+
+"हे पार्थ! आत्मा नाशवान के भीतर अविनाशी है।",
+
+"हे पार्थ! दोनों से परे पुरुषोत्तम (परमेश्वर) हैं।",
+
+"हे पार्थ! जो मुझे पुरुषोत्तम के रूप में जानता है, वह सब कुछ जानता है।",
+
+"हे पार्थ! शास्त्र यह निर्धारित करने में तुम्हारे मार्गदर्शक हैं कि क्या किया जाना चाहिए।",
+
+"हे पार्थ! यज्ञ, दान और तप के कार्यों को कभी नहीं छोड़ना चाहिए।",
+
+"हे पार्थ! बुद्धिमानों के लिए भी ये कार्य शुद्ध करने वाले हैं।",
+
+"हे पार्थ! शारीरिक कष्ट के डर से कर्म त्यागना गलत है।",
+
+"हे पार्थ! बदले की अपेक्षा के बिना दिया गया दान सात्त्विक (शुद्ध) है।",
+
+"हे पार्थ! पुरस्कार की आशा के साथ दिया गया दान राजसी है।",
+
+"हे पार्थ! गलत समय या स्थान पर दिया गया दान तामसी (अज्ञानी) है।",
+
+"हे पार्थ! आत्मा से मिलने वाला सुख स्थायी होता है।",
+
+"हे पार्थ! इंद्रियों से मिलने वाला सुख पहले अमृत जैसा, लेकिन अंत में विष जैसा होता है।",
+
+"हे पार्थ! भक्ति के द्वारा कोई मुझे वैसा ही जान सकता है जैसा मैं हूँ।",
+
+"हे पार्थ! मुझे जानकर कोई मेरे दिव्य धाम में प्रवेश करता है।",
+
+"हे पार्थ! हर परिस्थिति में मुझे याद करो।",
+
+"हे पार्थ! मैं वह धागा हूँ जिस पर ब्रह्मांड के सभी मोती पिरोए गए हैं।",
+
+"हे पार्थ! हर क्रिया की एक प्रतिक्रिया होती है; समझदारी से चुनाव करें।",
+
+"हे पार्थ! मौन आत्मा की वाणी है।",
+
+"हे पार्थ! अनुशासित मन सुख की ओर ले जाता है।",
+
+"हे पार्थ! अननुशासित मन दुख की ओर ले जाता है।",
+
+"हे पार्थ! अपने अहंकार को अपना मार्गदर्शक न बनने दें।",
+
+"हे पार्थ! विनम्रता महानता की ओर पहला कदम है।",
+
+"हे पार्थ! क्षमा गुणी लोगों की शक्ति है।",
+
+"हे पार्थ! धैर्य सभी द्वारों की कुंजी है।",
+
+"हे पार्थ! करुणा ही सर्वोच्च धर्म है।",
+
+"हे पार्थ! गरीबों और पीड़ितों में ईश्वर को देखें।",
+
+"हे पार्थ! मेरी सेवा के लिए मानवता की सेवा करो।",
+
+"हे पार्थ! शरीर एक मंदिर है; इसे पवित्र रखो।",
+
+"हे पार्थ! संयम ही स्वास्थ्य और शांति का मार्ग है।",
+
+"हे पार्थ! बहुत अधिक सोना या बहुत कम सोना योगी के लिए नहीं है।",
+
+"हे पार्थ! बहुत अधिक भोजन या बहुत कम भोजन योगी के लिए नहीं है।",
+
+"हे पार्थ! संतुलन ही जीवन का सार है।",
+
+"हे पार्थ! तुम्हारे विचार तुम्हारी वास्तविकता बनाते हैं।",
+
+"हे पार्थ! मेरे बारे में सोचना मेरे साथ होना है।",
+
+"हे पार्थ! दूरी केवल शरीर के लिए है, आत्मा के लिए नहीं।",
+
+"हे पार्थ! मैं हमेशा तुम्हारे साथ हूँ, तब भी जब तुम अकेला महसूस करते हो।",
+
+"हे पार्थ! जिसे तुम नियंत्रित नहीं कर सकते, उसे छोड़ दो।",
+
+"हे पार्थ! ईश्वरीय योजना पर भरोसा रखें।",
+
+"हे पार्थ! हर अंत एक नई शुरुआत है।",
+
+"हे पार्थ! जीवन एक स्वप्न है; सत्य के प्रति जागो।",
+
+"हे पार्थ! तुम एक आत्मा हो जो मानवीय अनुभव कर रही है।",
+
+"हे पार्थ! अपनी भूमिकाओं के साथ अपनी पहचान न जोड़ें।",
+
+"हे पार्थ! तुम शरीर नहीं हो; तुम शरीर के चालक हो।",
+
+"हे पार्थ! शाश्वत पर ध्यान केंद्रित करें, अस्थायी पर नहीं।",
+
+"हे पार्थ! दुनिया एक मंच है; अपनी भूमिका अच्छी तरह निभाएं।",
+
+"हे पार्थ! वैराग्य का अर्थ परवाह न करना नहीं है।",
+
+"हे पार्थ! वैराग्य का अर्थ परिणाम का गुलाम न होना है।",
+
+"हे पार्थ! बिना किसी अपेक्षा के प्रेम ही सर्वोच्च प्रेम है।",
+
+"हे पार्थ! बिना याद रखे दें; बिना भूले स्वीकार करें।",
+
+"हे पार्थ! ज्ञान मनुष्य और परमात्मा के बीच का सेतु है।",
+
+"हे पार्थ! ध्यान मन की लहरों को शांत करने का साधन है।",
+
+"हे पार्थ! मन की स्थिरता में ईश्वर प्रकट होते हैं।",
+
+"हे पार्थ! मैं ओंकार (ॐ) हूँ, आदि ध्वनि।",
+
+"हे पार्थ! मैं दो विचारों के बीच का मौन हूँ।",
+
+"हे पार्थ! हर सांस परमात्मा का उपहार है।",
+
+"हे पार्थ! अपने जीवन का उपयोग उच्च उद्देश्य के लिए करें।",
+
+"हे पार्थ! स्वार्थ एक छोटा पिंजरा है।",
+
+"हे पार्थ! निस्वार्थता विशाल आकाश है।",
+
+"हे पार्थ! कमल के समान बनो, जो जल में उगता है लेकिन सूखा रहता है।",
+
+"हे पार्थ! संसार में रहो, लेकिन संसार के मत बनो।",
+
+"हे पार्थ! तुम्हारा चरित्र ही तुम्हारी असली संपत्ति है।",
+
+"हे पार्थ! सत्यनिष्ठा वह है जब कोई देख न रहा हो तब भी सही कार्य करना।",
+
+"हे पार्थ! सत्य एक है, लेकिन ऋषि उसे कई नामों से पुकारते हैं।",
+
+"हे पार्थ! सभी धर्म एक ही सागर में गिरने वाली नदियाँ हैं।",
+
+"हे पार्थ! सबका सम्मान करें, क्योंकि मैं सब में वास करता हूँ।",
+
+"हे पार्थ! दयालुता आत्मा की भाषा है।",
+
+"हे पार्थ! पाप से घृणा करो, पापी से नहीं।",
+
+"हे पार्थ! हर कोई एक कठिन लड़ाई लड़ रहा है; दयालु बनें।",
+
+"हे पार्थ! तुम्हारा कर्तव्य ही तुम्हारा सबसे बड़ा धर्म है।",
+
+"हे पार्थ! प्रेम के साथ कार्य करो, और कार्य ही प्रार्थना बन जाएगा।",
+
+"हे पार्थ! अच्छे काम का फल वह काम स्वयं है।",
+
+"हे पार्थ! शांति तुम्हारे भीतर से शुरू होती है।",
+
+"हे पार्थ! एक शांत हृदय एक शांत दुनिया बनाता है।",
+
+"हे पार्थ! दूसरों की राय से परेशान न हों।",
+
+"हे पार्थ! अपने विवेक का पालन करें, क्योंकि वह मेरी आवाज है।",
+
+"हे पार्थ! साहस एक भक्त की पहचान है।",
+
+"हे पार्थ! डर अहंकार का एक भ्रम है।",
+
+"हे पार्थ! अपने डर मुझे सौंप दो।",
+
+"हे पार्थ! मैं तुम्हारी कमजोरी में तुम्हारी शक्ति हूँ।",
+
+"हे पार्थ! मैं तुम्हारी निराशा में तुम्हारी आशा हूँ।",
+
+"हे पार्थ! खुद पर विश्वास करो, क्योंकि मैं तुम पर विश्वास करता हूँ।",
+
+"हे पार्थ! तुम अनंत चीजें करने में सक्षम हो।",
+
+"हे पार्थ! सीमाएं केवल मन में होती हैं।",
+
+"हे पार्थ! आत्मा की कोई सीमा नहीं होती।",
+
+"हे पार्थ! समय सबसे बड़ा शिक्षक है।",
+
+"हे पार्थ! प्रकृति मेरा जीवित वस्त्र है।",
+
+"हे पार्थ! पृथ्वी की रक्षा करो, क्योंकि यह मेरी रचना है।",
+
+"हे पार्थ! हर फूल और पेड़ में दिव्यता देखें।",
+
+"हे पार्थ! पशु तुम्हारे सह-यात्री हैं; उनके साथ प्रेम से व्यवहार करें।",
+
+"हे पार्थ! अहिंसक हृदय एक पवित्र हृदय है।",
+
+"हे पार्थ! सत्य ब्रह्मांड की नींव है।",
+
+"हे पार्थ! सत्य बोलें, लेकिन दयालुता के साथ बोलें।",
+
+"हे पार्थ! एक कड़वा सत्य मीठे झूठ से बेहतर है।",
+
+"हे पार्थ! ईमानदारी स्पष्टता का मार्ग है।",
+
+"हे पार्थ! सादगी ही परम परिष्कार है।",
+
+"हे पार्थ! उच्च विचार और सरल जीवन ही लक्ष्य होना चाहिए।",
+
+"हे पार्थ! अहंकार पतन से पहले आता है।",
+
+"हे पार्थ! अभिमान एक पर्दा है जो सत्य को छुपाता है।",
+
+"हे पार्थ! उस घास की तरह विनम्र बनो जो तूफान में भी बच जाती है।",
+
+"हे पार्थ! महानता सेवा में पाई जाती है।",
+
+"हे पार्थ! आप जितना अधिक देंगे, उतना ही आपके पास होगा।",
+
+"हे पार्थ! ज्ञान बांटने से बढ़ता है।",
+
+"हे पार्थ! प्रेम देने से कई गुना बढ़ जाता।",
+
+"हे पार्थ! बांटने से दुख कम हो जाता है।",
+
+"हे पार्थ! अपना मन लक्ष्य पर रखें।",
+
+"हे पार्थ! बाधाएं वेश बदलकर आए अवसर हैं।",
+
+"हे पार्थ! हर असफलता सफलता की ओर एक कदम है।",
+
+"हे पार्थ! हार न मानें, चाहे रास्ता कितना ही अंधेरा क्यों न हो।",
+
+"हे पार्थ! मैं वह प्रकाश हूँ जो रात में तुम्हारा मार्गदर्शन करता है।",
+
+"हे पार्थ! प्रार्थना परमात्मा से सीधा संपर्क है।",
+
+"हे पार्थ! मेरे नाम का जाप करो और शांति पाओ।",
+
+"हे पार्थ! ईश्वर का हर नाम एक ही कमरे का दरवाजा है।",
+
+"हे पार्थ! विश्वास आत्मा की आंख है।",
+
+"हे पार्थ! संदेह मन का कोहरा है।",
+
+"हे पार्थ! विश्वास के सूर्य से कोहरे को साफ करें।",
+
+"हे पार्थ! तुम कभी अकेले नहीं हो; मैं तुम्हारी सांसों से भी करीब हूँ।",
+
+"हे पार्थ! दुनिया एक स्कूल है; अपने सबक अच्छी तरह सीखें।",
+
+"हे पार्थ! कर्म वह शिक्षक है जो कभी असफल नहीं होता।",
+
+"हे पार्थ! अपने भाग्य के लिए दूसरों को दोष न दें।",
+
+"हे पार्थ! तुम अपने भाग्य के स्वयं निर्माता हो।",
+        "हे पार्थ! उठो और अपना युद्ध लड़ो।"
+    ];
+
+    // ========== EARTH GLOBE FUNCTIONS FROM CODE 2 ==========
+    function initEarthGlobe() {
+        const canvas = document.getElementById('earth-canvas');
+        earthScene = new THREE.Scene();
+        earthCamera = new THREE.PerspectiveCamera(75, 300 / 300, 0.1, 1000);
+        earthRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        earthRenderer.setSize(300, 300);
+
+        // CREATE GLOBE
+        const geometry = new THREE.SphereGeometry(2.5, 64, 64);
+        const texture = new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg');
+        const material = new THREE.MeshPhongMaterial({ 
+            map: texture,
+            shininess: 5,
+            bumpMap: texture,
+            bumpScale: 0.05
+        });
+        earthGlobe = new THREE.Mesh(geometry, material);
+        earthScene.add(earthGlobe);
+
+        // ADD ATMOSPHERE GLOW
+        const cloudGeom = new THREE.SphereGeometry(2.55, 64, 64);
+        const cloudMat = new THREE.MeshPhongMaterial({
+            map: new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png'),
+            transparent: true,
+            opacity: 0.4
+        });
+        earthClouds = new THREE.Mesh(cloudGeom, cloudMat);
+        earthScene.add(earthClouds);
+
+        // LIGHTING
+        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        earthScene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+        sunLight.position.set(5, 3, 5);
+        earthScene.add(sunLight);
+
+        earthCamera.position.z = 7;
+
+        // Start animation
+        animateEarth();
+    }
+
+    function animateEarth() {
+        requestAnimationFrame(animateEarth);
+        if (earthGlobe) {
+            earthGlobe.rotation.y += earthRotationSpeed;
+            if (earthClouds) earthClouds.rotation.y += cloudRotationSpeed;
+            earthRenderer.render(earthScene, earthCamera);
+        }
+    }
+
+    // ========== CORE FUNCTIONS FROM CODE 1 ==========
+    function startAge() {
+        if(ageTimer) clearInterval(ageTimer);
+        ageTimer = setInterval(() => {
+            const dob = new Date(document.getElementById('dobInput').value);
+            if(isNaN(dob)) return;
+            const now = new Date();
+            const diff = now - dob;
+            
+            const y = Math.floor(diff / 31557600000);
+            const mon = Math.floor((diff % 31557600000) / 2629800000);
+            const d = Math.floor((diff % 2629800000) / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const min = Math.floor((diff % 3600000) / 60000);
+            const sec = Math.floor((diff % 60000) / 1000);
+            
+            if(curLang === 'HI') {
+                document.getElementById('ageDisplay').innerText = `आपकी वर्तमान आयु है ${y} साल, ${mon} महीने, ${d} दिन, ${h} घंटे, ${min} मिनट, ${sec} सेकंड चल रहे हैं।`;
+            } else {
+                document.getElementById('ageDisplay').innerText = `Your current age is ${y} years, ${mon} months, ${d} days, ${h} hours, ${min} minutes, ${sec} seconds passing.`;
+            }
+        }, 1000);
+    }
+
+    function toggleLang() {
+        curLang = curLang === 'EN' ? 'HI' : 'EN';
+        document.getElementById('langBtn').innerText = curLang === 'EN' ? 'HINDI' : 'ENGLISH';
+        document.getElementById('mainTitle').innerText = ui[curLang].title;
+        document.getElementById('todoLbl').innerText = ui[curLang].todo;
+        document.getElementById('todoHint').innerText = ui[curLang].hint;
+        document.getElementById('verdictTitle').innerText = ui[curLang].verdict;
+        if(document.getElementById('quizPage').classList.contains('active')) renderPillar();
+        startAge();
+    }
+
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 'quizPage') renderPillar();
+    }
+
+    function renderPillar() {
+        const data = curLang === 'EN' ? pillarsEN : pillarsHI;
+        const p = data[pIdx];
+        document.getElementById('pillarTitle').innerText = p.title;
+        document.getElementById('pillarQuestions').innerHTML = p.qs.map((q, i) => `
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:600; color:#333;">${i+1}. ${q.q}</label>
+                <select class="obj-select">
+                    ${q.o.map(opt => `<option>${opt}</option>`).join('')}
+                </select>
+            </div>`).join('');
+        document.getElementById('nextBtn').innerText = pIdx === 4 ? (curLang === 'EN' ? "RUN JARVIS" : "जार्विस चलाएं") : ui[curLang].next;
+    }
+
+    function changePillar(dir) {
+        pIdx += dir;
+        if(pIdx > 4) runJarvis();
+        else if(pIdx < 0) pIdx = 0;
+        else renderPillar();
+    }
+
+    // UPDATED JARVIS ENGINE: HINDI SPEAKABLE LOGIC
+    function runJarvis() {
+        showPage('page3');
+        const score = Math.floor(Math.random() * 30) + 68;
+        document.getElementById('finalScore').innerText = score;
+        const pool = curLang === 'EN' ? quotesEN : quotesHI;
+        const randQ = pool[Math.floor(Math.random() * pool.length)];
+        document.getElementById('krishnaQuote').innerText = randQ;
+        
+        const speech = new SpeechSynthesisUtterance(randQ);
+        
+        if (curLang === 'HI') {
+            speech.lang = 'hi-IN';
+            const voices = window.speechSynthesis.getVoices();
+            const hindiVoice = voices.find(voice => voice.lang.includes('hi-IN') || voice.lang.includes('hi'));
+            if (hindiVoice) speech.voice = hindiVoice;
+        } else {
+            speech.lang = 'en-US';
+        }
+
+        speech.rate = 0.95;
+        window.speechSynthesis.speak(speech);
+    }
+
+    // CALENDAR & NOTES INITIALIZATION
+    const dObj = new Date();
+    document.getElementById('calMonth').innerText = dObj.toLocaleString('default', { month: 'long' }).toUpperCase();
+    document.getElementById('calDay').innerText = dObj.getDate();
+    document.getElementById('calYear').innerText = dObj.getFullYear();
+
+    function addNote() {
+        document.getElementById('todoTab').classList.add('elongated');
+        const n = { id: Date.now(), time: new Date().toLocaleString(), text: "" };
+        notes.unshift(n);
+        renderActiveNote(n);
+    }
+    function renderActiveNote(n) {
+        document.getElementById('activeNoteArea').innerHTML = `
+            <small style="color:var(--gold)">${n.time}</small>
+            <textarea class="note-textarea" oninput="saveNote(${n.id}, this.value)">${n.text}</textarea>`;
+    }
+    function saveNote(id, val) {
+        const n = notes.find(x => x.id === id);
+        if(n) n.text = val;
+        localStorage.setItem('pli_v5', JSON.stringify(notes));
+    }
+    function shrinkTodo() {
+        document.getElementById('todoTab').classList.remove('elongated');
+        document.getElementById('activeNoteArea').innerHTML = `<p style="text-align:center; color:#999;">${ui[curLang].hint}</p>`;
+    }
+    function openHistory() {
+        document.getElementById('historyModal').style.display = 'flex';
+        document.getElementById('historyList').innerHTML = notes.map(n => `
+            <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer;" onclick="loadNote(${n.id})">
+                <strong>${n.time}</strong><br><small>${n.text.substring(0,35)}...</small>
+            </div>`).join('');
+    }
+    function loadNote(id) {
+        const n = notes.find(x => x.id === id);
+        document.getElementById('todoTab').classList.add('elongated');
+        renderActiveNote(n);
+        document.getElementById('historyModal').style.display = 'none';
+    }
+
+    // PRE-LOAD VOICES FOR BETTER HINDI SUPPORT
+    window.speechSynthesis.getVoices();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = window.speechSynthesis.getVoices;
+    }
+
+    // Initialize Earth Globe when page loads
+    window.addEventListener('DOMContentLoaded', () => {
+        initEarthGlobe();
+    });
+</script>
+</body>
+</html>
